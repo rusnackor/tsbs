@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -26,10 +27,15 @@ type HTTPClient struct {
 
 // HTTPClientDoOptions wraps options uses when calling `Do`.
 type HTTPClientDoOptions struct {
+	ContentType          string
 	Debug                int
 	PrettyPrintResponses bool
 	chunkSize            uint64
 	database             string
+	Organization         string
+	AuthToken            string
+	Path                 []byte
+	Accept               string
 }
 
 var httpClientOnce = sync.Once{}
@@ -62,18 +68,35 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 	w.uri = w.uri[:0]
 	w.uri = append(w.uri, w.Host...)
 	//w.uri = append(w.uri, bytesSlash...)
+
+	//v2
+	//w.uri = append(w.uri, opts.Path...)
+	//opts.Path = []byte(fmt.Sprintf("/api/v2/query?orgID=%s", b.orgId))
+
+	//v1
 	w.uri = append(w.uri, q.Path...)
-	w.uri = append(w.uri, []byte("&db="+url.QueryEscape(opts.database))...)
+	w.uri = append(w.uri, []byte("&database="+url.QueryEscape(opts.database))...)
+	w.uri = append(w.uri, []byte("&orgID="+url.QueryEscape(opts.Organization))...)
+	//w.uri = append(w.uri, []byte("&u=rusnackor")...)
+	//w.uri = append(w.uri, []byte("&p=password")...)
+
 	if opts.chunkSize > 0 {
 		s := fmt.Sprintf("&chunked=true&chunk_size=%d", opts.chunkSize)
 		w.uri = append(w.uri, []byte(s)...)
 	}
 
+	fmt.Println(" ----- ===== URI:")
+	fmt.Println(string(w.uri))
 	// populate a request with data from the Query:
-	req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
+	req, err := http.NewRequest(string(q.Method), string(w.uri), bytes.NewBuffer(q.Body)) // TODO performance
+	//req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
 	if err != nil {
 		panic(err)
 	}
+
+	req.Header.Add("Accept", opts.Accept)
+	req.Header.Add("Content-Type", opts.ContentType)
+	req.Header.Add("Authorization", fmt.Sprintf("Token %s", opts.AuthToken))
 
 	// Perform the request while tracking latency:
 	start := time.Now()
@@ -82,12 +105,14 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 		panic(err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		panic("http request did not return status 200 OK")
-	}
-
 	var body []byte
 	body, err = ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("Body:", string(body))
+		fmt.Println("Error:", err)
+		panic("http request did not return status 200 OK - R")
+	}
 
 	if err != nil {
 		panic(err)
