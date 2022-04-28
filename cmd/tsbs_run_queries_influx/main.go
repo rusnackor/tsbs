@@ -125,8 +125,8 @@ func (p *processor) ProcessQuery(q query.Query, _ bool) ([]*query.Stat, error) {
 
 	hq := q.(*query.HTTP)
 	//hq.Path = p.opts.Path
-	fmt.Println(" ----- ====== HQ:")
-	fmt.Println(hq)
+	//fmt.Println(" ----- ====== HQ:")
+	//fmt.Println(hq)
 	lag, err := p.w.Do(hq, p.opts)
 	if err != nil {
 		return nil, err

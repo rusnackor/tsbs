@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -75,7 +74,7 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 
 	//v1
 	w.uri = append(w.uri, q.Path...)
-	w.uri = append(w.uri, []byte("&database="+url.QueryEscape(opts.database))...)
+	w.uri = append(w.uri, []byte("&db="+url.QueryEscape(opts.database))...)
 	w.uri = append(w.uri, []byte("&orgID="+url.QueryEscape(opts.Organization))...)
 	//w.uri = append(w.uri, []byte("&u=rusnackor")...)
 	//w.uri = append(w.uri, []byte("&p=password")...)
@@ -85,17 +84,17 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 		w.uri = append(w.uri, []byte(s)...)
 	}
 
-	fmt.Println(" ----- ===== URI:")
-	fmt.Println(string(w.uri))
+	//fmt.Println(" ----- ===== URI:")
+	//fmt.Println(string(w.uri))
 	// populate a request with data from the Query:
-	req, err := http.NewRequest(string(q.Method), string(w.uri), bytes.NewBuffer(q.Body)) // TODO performance
-	//req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
+	//req, err := http.NewRequest(string(q.Method), string(w.uri), bytes.NewBuffer(q.Body)) // TODO performance
+	req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
 	if err != nil {
 		panic(err)
 	}
 
-	req.Header.Add("Accept", opts.Accept)
-	req.Header.Add("Content-Type", opts.ContentType)
+	//req.Header.Add("Accept", opts.Accept)
+	//req.Header.Add("Content-Type", opts.ContentType)
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", opts.AuthToken))
 
 	// Perform the request while tracking latency:
