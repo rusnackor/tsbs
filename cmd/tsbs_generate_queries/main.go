@@ -4,9 +4,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/timescale/tsbs/pkg/query/config"
 	"os"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/query/config"
 
 	"github.com/blagojts/viper"
 	"github.com/spf13/pflag"
@@ -50,6 +51,14 @@ var useCaseMatrix = map[string]map[string]utils.QueryFillerMaker{
 		iot.LabelAvgLoad:                       iot.NewAvgLoad,
 		iot.LabelDailyActivity:                 iot.NewDailyTruckActivity,
 		iot.LabelBreakdownFrequency:            iot.NewTruckBreakdownFrequency,
+		iot.LabelTestQuery:                     iot.NewTestQuery,
+		iot.LabelExtract1H:                     iot.NewExtract1H,
+		iot.LabelExtract10Min:                  iot.NewExtract10Min,
+		iot.LabelOlderThan:                     iot.NewOlderThan,
+		iot.LabelExtract20MinWFilter:           iot.NewExtract20MinWfilter,
+		iot.LabelStats10Min:                    iot.NewStatistics10Min,
+		iot.LabelStats24H:                      iot.NewStatistics24H,
+		iot.LabelExtract1Tag:                   iot.NewExtract1TagH,
 	},
 }
 

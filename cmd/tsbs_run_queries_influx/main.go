@@ -102,7 +102,7 @@ func newProcessor() query.Processor { return &processor{} }
 
 func (p *processor) Init(workerNumber int) {
 	p.opts = &HTTPClientDoOptions{
-		ContentType:          "application/json", //application/json  /  application/vnd.flux
+		ContentType:          "application/vnd.flux", //application/json  /  application/vnd.flux
 		Accept:               "application/csv",
 		Debug:                runner.DebugLevel(),
 		PrettyPrintResponses: runner.DoPrintResponses(),

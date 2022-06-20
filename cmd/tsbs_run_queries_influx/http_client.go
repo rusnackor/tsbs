@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/url"
+
+	//"net/url"
+	"bytes"
 	"os"
 	"sync"
 	"time"
@@ -69,13 +71,13 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 	//w.uri = append(w.uri, bytesSlash...)
 
 	//v2
-	//w.uri = append(w.uri, opts.Path...)
+	w.uri = append(w.uri, opts.Path...)
 	//opts.Path = []byte(fmt.Sprintf("/api/v2/query?orgID=%s", b.orgId))
 
 	//v1
-	w.uri = append(w.uri, q.Path...)
-	w.uri = append(w.uri, []byte("&db="+url.QueryEscape(opts.database))...)
-	w.uri = append(w.uri, []byte("&orgID="+url.QueryEscape(opts.Organization))...)
+	//w.uri = append(w.uri, q.Path...)
+	//w.uri = append(w.uri, []byte("&db="+url.QueryEscape(opts.database))...)
+	//w.uri = append(w.uri, []byte("&orgID="+url.QueryEscape(opts.Organization))...)
 	//w.uri = append(w.uri, []byte("&u=rusnackor")...)
 	//w.uri = append(w.uri, []byte("&p=password")...)
 
@@ -84,29 +86,35 @@ func (w *HTTPClient) Do(q *query.HTTP, opts *HTTPClientDoOptions) (lag float64, 
 		w.uri = append(w.uri, []byte(s)...)
 	}
 
-	//fmt.Println(" ----- ===== URI:")
-	//fmt.Println(string(w.uri))
+	//fmt.Println(" ----- ===== NewRequest:")
+	//fmt.Println("Method:", string(q.Method))
+	//fmt.Println("URI:", string(w.uri))
+	//fmt.Println("Body:", bytes.NewBuffer(q.Body))
 	// populate a request with data from the Query:
-	//req, err := http.NewRequest(string(q.Method), string(w.uri), bytes.NewBuffer(q.Body)) // TODO performance
-	req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
+	req, err := http.NewRequest(string(q.Method), string(w.uri), bytes.NewBuffer(q.Body))
+	//req, err := http.NewRequest(string(q.Method), string(w.uri), nil)
 	if err != nil {
 		panic(err)
 	}
 
-	//req.Header.Add("Accept", opts.Accept)
-	//req.Header.Add("Content-Type", opts.ContentType)
+	req.Header.Add("Accept", opts.Accept)
+	req.Header.Add("Content-Type", opts.ContentType)
 	req.Header.Add("Authorization", fmt.Sprintf("Token %s", opts.AuthToken))
 
 	// Perform the request while tracking latency:
 	start := time.Now()
+	//fmt.Println("\n ----- ===== Response:")
 	resp, err := w.client.Do(req)
 	if err != nil {
 		panic(err)
 	}
 	defer resp.Body.Close()
+	//fmt.Println("Response:", resp)
 	var body []byte
 	body, err = ioutil.ReadAll(resp.Body)
 
+	//fmt.Println("Response Body:", string(body))
+	//fmt.Println("Response Error:", err)
 	if resp.StatusCode != http.StatusOK {
 		fmt.Println("Body:", string(body))
 		fmt.Println("Error:", err)

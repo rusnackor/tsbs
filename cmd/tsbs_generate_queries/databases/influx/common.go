@@ -1,7 +1,7 @@
 package influx
 
 import (
-	"fmt"
+	//"fmt"
 	"net/url"
 	"time"
 
@@ -29,8 +29,10 @@ func (g *BaseGenerator) fillInQuery(qi query.Query, humanLabel, humanDesc, influ
 	q.RawQuery = []byte(influxql)
 	q.HumanDescription = []byte(humanDesc)
 	q.Method = []byte("POST")
-	q.Path = []byte(fmt.Sprintf("/query?%s", v.Encode()))
-	q.Body = nil
+	//q.Path = []byte(fmt.Sprintf("/query?%s", v.Encode()))
+	//q.Body = nil
+	q.Path = nil
+	q.Body = []byte(influxql)
 }
 
 // NewDevops creates a new devops use case query generator.

@@ -2,9 +2,10 @@ package iot
 
 import (
 	"fmt"
-	"github.com/timescale/tsbs/pkg/data/usecases/iot"
 	"math/rand"
 	"time"
+
+	"github.com/timescale/tsbs/pkg/data/usecases/iot"
 
 	"github.com/timescale/tsbs/cmd/tsbs_generate_queries/uses/common"
 	"github.com/timescale/tsbs/pkg/query"
@@ -25,6 +26,10 @@ const (
 	LongDrivingSessionDuration = 4 * time.Hour
 	// DailyDrivingDuration is time duration of one day of driving.
 	DailyDrivingDuration = 24 * time.Hour
+	//TEST intervals
+	Test1HourDuration = 1 * time.Hour
+	Test10MinDuration = 10 * time.Minute
+	Test20MinDuration = 20 * time.Minute
 
 	// LabelLastLoc is the label for the last location query.
 	LabelLastLoc = "last-loc"
@@ -52,6 +57,15 @@ const (
 	LabelDailyActivity = "daily-activity"
 	// LabelBreakdownFrequency is the label for the breakdown frequency query.
 	LabelBreakdownFrequency = "breakdown-frequency"
+	// Labels for TEST stuff
+	LabelTestQuery           = "test-query"
+	LabelExtract1H           = "extract-1h"
+	LabelExtract10Min        = "extract-10min"
+	LabelOlderThan           = "older-than"
+	LabelExtract20MinWFilter = "20min-tags-extract"
+	LabelStats10Min          = "stats-10min"
+	LabelStats24H            = "stats-24h"
+	LabelExtract1Tag         = "extract-1tag"
 )
 
 // Core is the common component of all generators for all systems.
@@ -163,4 +177,44 @@ type DailyTruckActivityFiller interface {
 // TruckBreakdownFrequencyFiller is a type that can fill in the truck breakdown frequency query.
 type TruckBreakdownFrequencyFiller interface {
 	TruckBreakdownFrequency(query.Query)
+}
+
+// TestQueryFiller is a type that is PoC to adding new query type.
+type TestQueryFiller interface {
+	TestQuery(query.Query)
+}
+
+// Extract1HFiller is a type that can fill in the extract 1 hour query.
+type Extract1HFiller interface {
+	Extract1H(query.Query)
+}
+
+// Extract10MinFiller is a type that can fill in the extract 10 min query.
+type Extract10MinFiller interface {
+	Extract10Min(query.Query)
+}
+
+// OlderThanFiller is a type that can fill in the older than query.
+type OlderThanFiller interface {
+	OlderThan(query.Query)
+}
+
+// Extract20MinWfilterFiller is a type that can fill in the extract 20 min with filter query.
+type Extract20MinWfilterFiller interface {
+	Extract20MinWfilter(query.Query)
+}
+
+// Statistics10MinFiller is a type that can fill in the statistics 10 min query.
+type Statistics10MinFiller interface {
+	Statistics10Min(query.Query)
+}
+
+// Statistics24HFiller is a type that can fill in the statistics 24 hours query.
+type Statistics24HFiller interface {
+	Statistics24H(query.Query)
+}
+
+// Extract1TagFiller is a type that can fill in the extract 1 tag query.
+type Extract1TagFiller interface {
+	Extract1Tag(query.Query)
 }

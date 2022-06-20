@@ -11,6 +11,7 @@ import (
 
 const (
 	iotReadingsTable = "readings"
+	test_tablename   = "test1k_1s"
 )
 
 // IoT produces TimescaleDB-specific queries for all the iot query types.
@@ -422,6 +423,131 @@ func (i *IoT) TruckBreakdownFrequency(qi query.Query) {
 	humanDesc := humanLabel
 
 	i.fillInQuery(qi, humanLabel, humanDesc, iot.DiagnosticsTableName, sql)
+}
+
+// TestQuery is PoC for adding own queries.
+func (i *IoT) TestQuery(qi query.Query) {
+
+	sql := fmt.Sprintf(`SELECT count(*) FROM readings`)
+
+	humanLabel := "TimescaleDB test query"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Extract1H - data from last 1 hour, only time filter.
+func (i *IoT) Extract1H(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test1HourDuration)
+	sql := fmt.Sprintf(`SELECT * FROM %s 
+		WHERE ev_time >= '%s' AND ev_time < '%s'`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt),
+		interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB data from last 1 hour, only time filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Extract10Min - data from last 10 min, only time filter.
+func (i *IoT) Extract10Min(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	sql := fmt.Sprintf(`SELECT * FROM %s 
+		WHERE ev_time >= '%s' AND ev_time < '%s'`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt),
+		interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB data from last 10 min, only time filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// OlderThan - data older than given time..
+func (i *IoT) OlderThan(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	sql := fmt.Sprintf(`SELECT * FROM %s 
+		WHERE ev_time <= '%s'`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB query, take data older than"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Extract20MinWfilter - data for 20min interval, filter by tags.
+func (i *IoT) Extract20MinWfilter(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test20MinDuration)
+	sql := fmt.Sprintf(`SELECT * FROM %s 
+		WHERE ev_time >= '%s' AND ev_time < '%s'
+		AND tag_id BETWEEN 257 AND 530`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt),
+		interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB data from 20 min interval, tag_id filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Statistics10Min - 10 min interval, various calculations.
+func (i *IoT) Statistics10Min(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	sql := fmt.Sprintf(`SELECT tag_id, AVG(value), MIN(value), MAX(value) 
+		FROM %s WHERE ev_time >= '%s' AND ev_time < '%s' 
+		GROUP BY tag_id`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt),
+		interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB Statistics, 10 min interval, avg(), min(), max() for each tag"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Statistics24H - 24 h interval, various calculations.
+func (i *IoT) Statistics24H(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.DailyDrivingDuration)
+	sql := fmt.Sprintf(`SELECT tag_id, AVG(value), MIN(value), MAX(value) 
+		FROM %s WHERE ev_time >= '%s' AND ev_time < '%s' 
+		GROUP BY tag_id`,
+		test_tablename,
+		interval.Start().Format(goTimeFmt),
+		interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB Statistics, 24 h interval, avg(), min(), max() for each tag"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
+}
+
+// Extract1Tag - data from 1 tag, variable time filter.
+func (i *IoT) Extract1Tag(qi query.Query) {
+
+	sql := fmt.Sprintf(`SELECT * FROM %s 
+		WHERE ev_time >= '%s' AND ev_time < '%s' 
+		AND tag_id = 257`,
+		test_tablename,
+		i.Interval.Start().Format(goTimeFmt),
+		i.Interval.End().Format(goTimeFmt))
+
+	humanLabel := "TimescaleDB data from 1 tag, variable time filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, iot.ReadingsTableName, sql)
 }
 
 // tenMinutePeriods calculates the number of 10 minute periods that can fit in

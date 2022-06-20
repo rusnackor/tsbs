@@ -103,6 +103,24 @@ func (ti *TimeInterval) MustRandWindow(window time.Duration) *TimeInterval {
 	return res
 }
 
+// RandWindow creates a TimeInterval of duration `window` at a uniformly-random
+// start time within the time period represented by this TimeInterval.
+func (ti *TimeInterval) AddWindow(window time.Duration) *TimeInterval {
+	start := ti.start.UnixNano()
+	end := start + window.Nanoseconds()
+
+	x, err := NewTimeInterval(time.Unix(0, start), time.Unix(0, end))
+	if err != nil {
+		panic(err.Error())
+	} else if x.Duration() != window {
+		// Unless the logic above this changes, this should not happen, so
+		// we panic in that case.
+		panic("generated TimeInterval's duration does not equal window")
+	}
+
+	return x
+}
+
 // Start returns the starting time in UTC.
 func (ti *TimeInterval) Start() time.Time {
 	return ti.start

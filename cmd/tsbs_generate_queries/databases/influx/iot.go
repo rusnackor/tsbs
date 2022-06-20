@@ -10,6 +10,11 @@ import (
 	"github.com/timescale/tsbs/pkg/query"
 )
 
+const (
+	test_bucket      = "Phase_2"
+	test_measurement = "test1k_1s"
+)
+
 // IoT produces Influx-specific queries for all the iot query types.
 type IoT struct {
 	*iot.Core
@@ -310,6 +315,135 @@ func (i *IoT) TruckBreakdownFrequency(qi query.Query) {
 	)
 
 	humanLabel := "Influx truck breakdown frequency per model"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// TestQuery is PoC for adding own queries.
+func (i *IoT) TestQuery(qi query.Query) {
+
+	influxql := fmt.Sprintf(`from(bucket: "Idk") |> range(start: 2021-05-01T00:00:00Z, stop: 2021-05-01T02:00:00Z) |> filter(fn: (r) => r["_measurement"] == "diagnostics") |> filter(fn: (r) => r["_field"] == "status") |> filter(fn: (r) => r["device_version"] == "v2.3") |> filter(fn: (r) => r["driver"] == "Andy") |> filter(fn: (r) => r["fleet"] == "West") |> filter(fn: (r) => r["model"] == "G-2000") |> filter(fn: (r) => r["name"] == "truck_11") |> aggregateWindow(every: 1h, fn: last) |> yield(name: "last")`)
+	//influxql := fmt.Sprintf(`from(bucket: "Idk") |> range(start: 2021-05-01T00:00:00Z, stop: 2021-05-01T02:00:00Z) |> aggregateWindow(every: 1h, fn: last) |> yield(name: "last")`)
+
+	humanLabel := "Influx test query in FLUX language"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Extract1H - data from last 1 hour, only time filter.
+func (i *IoT) Extract1H(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test1HourDuration)
+	influxql := fmt.Sprintf(
+		`from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> drop(columns: ["_field", "_measurement", "_start", "_stop"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx data from last 1 hour, only time filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Extract10Min - data from last 10 min, only time filter.
+func (i *IoT) Extract10Min(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	influxql := fmt.Sprintf(
+		`from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> drop(columns: ["_field", "_measurement", "_start", "_stop"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx data from last 10 min, only time filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// OlderThan - data older than given time..
+func (i *IoT) OlderThan(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	influxql := fmt.Sprintf(
+		`from(bucket: "%s") |> range(start: 0, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> drop(columns: ["_field", "_measurement", "_start", "_stop"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx clean_db query, take data older than"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Extract20MinWfilter - data for 20min interval, filter by tags.
+func (i *IoT) Extract20MinWfilter(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test20MinDuration)
+	influxql := fmt.Sprintf(
+		`from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> filter(fn: (r) => r["tag_id"] > "257" and r["tag_id"] < "530") |> drop(columns: ["_field", "_measurement", "_start", "_stop"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx data for 20 min interval, tag_id filter"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Statistics10Min - 10 min interval, various calculations.
+func (i *IoT) Statistics10Min(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.Test10MinDuration)
+	influxql := fmt.Sprintf(
+		`data = from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> group(columns: ["tag_id"]) avg = data |> mean() |> set(key: "_field", value: "avg") min = data |> min() |> set(key: "_field", value: "min") max = data |> max() |> set(key: "_field", value: "max") union(tables: [avg, min, max]) |> pivot(rowKey:["_start"], columnKey: ["_field"], valueColumn: "_value") |> keep(columns: ["tag_id", "avg", "min", "max"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx Statistics, 10 min interval, avg(), min(), max() for each tag"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Statistics24H - 10 min interval, various calculations.
+func (i *IoT) Statistics24H(qi query.Query) {
+
+	interval := i.Interval.AddWindow(iot.DailyDrivingDuration)
+	influxql := fmt.Sprintf(
+		`data = from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> group(columns: ["tag_id"]) avg = data |> mean() |> set(key: "_field", value: "avg") min = data |> min() |> set(key: "_field", value: "min") max = data |> max() |> set(key: "_field", value: "max") union(tables: [avg, min, max]) |> pivot(rowKey:["_start"], columnKey: ["_field"], valueColumn: "_value") |> keep(columns: ["tag_id", "avg", "min", "max"])`,
+		test_bucket,
+		interval.Start().Format(time.RFC3339),
+		interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx Statistics, 24h interval, avg(), min(), max() for each tag"
+	humanDesc := humanLabel
+
+	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
+}
+
+// Extract1Tag - data from last 1 hour, only time filter.
+func (i *IoT) Extract1Tag(qi query.Query) {
+
+	influxql := fmt.Sprintf(
+		`from(bucket: "%s") |> range(start: %s, stop: %s) |> filter(fn: (r) => r._measurement == "%s" and r._field == "value") |> filter(fn: (r) => r["tag_id"] == "257") |> drop(columns: ["_field", "_measurement", "_start", "_stop"])`,
+		test_bucket,
+		i.Interval.Start().Format(time.RFC3339),
+		i.Interval.End().Format(time.RFC3339),
+		test_measurement)
+
+	humanLabel := "Influx data from 1 tag, variable time filter"
 	humanDesc := humanLabel
 
 	i.fillInQuery(qi, humanLabel, humanDesc, influxql)
